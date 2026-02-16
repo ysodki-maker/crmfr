@@ -1,0 +1,184 @@
+/* STYLES D'IMPRESSION POUR LA FICHE DE MESURES */
+/* À ajouter dans votre index.css ou dans un fichier séparé */
+
+@media print {
+  /* Configuration de la page */
+  @page {
+    size: A4;
+    margin: 1.5cm;
+  }
+
+  /* Masquer les éléments non nécessaires */
+  body {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* Réinitialiser les styles pour l'impression */
+  * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  /* Masquer les éléments d'interface */
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* Afficher les éléments spécifiques à l'impression */
+  .hidden.print\:block {
+    display: block !important;
+  }
+
+  /* Éviter les coupures de page */
+  .print\:page-break-inside-avoid {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Forcer les coupures de page */
+  .print\:page-break-before {
+    page-break-before: always;
+    break-before: always;
+  }
+
+  .print\:page-break-after {
+    page-break-after: always;
+    break-after: always;
+  }
+
+  /* Styles pour les arrière-plans en impression */
+  .print\:bg-white {
+    background-color: white !important;
+  }
+
+  .print\:bg-gray-100 {
+    background-color: #f3f4f6 !important;
+  }
+
+  .print\:bg-gray-800 {
+    background-color: #1f2937 !important;
+  }
+
+  /* Bordures pour impression */
+  .print\:border {
+    border-width: 1px !important;
+  }
+
+  .print\:border-2 {
+    border-width: 2px !important;
+  }
+
+  .print\:border-gray-300 {
+    border-color: #d1d5db !important;
+  }
+
+  .print\:border-gray-400 {
+    border-color: #9ca3af !important;
+  }
+
+  /* Textes pour impression */
+  .print\:text-black {
+    color: #000000 !important;
+  }
+
+  .print\:text-gray-500 {
+    color: #6b7280 !important;
+  }
+
+  .print\:text-gray-600 {
+    color: #4b5563 !important;
+  }
+
+  .print\:text-gray-700 {
+    color: #374151 !important;
+  }
+
+  /* Supprimer les ombres et arrondis pour l'impression */
+  .print\:shadow-none {
+    box-shadow: none !important;
+  }
+
+  .print\:rounded-none {
+    border-radius: 0 !important;
+  }
+
+  /* Espacement pour impression */
+  .print\:p-0 {
+    padding: 0 !important;
+  }
+
+  .print\:mb-4 {
+    margin-bottom: 1rem !important;
+  }
+
+  .print\:space-y-8 > * + * {
+    margin-top: 2rem !important;
+  }
+
+  /* Optimisations spécifiques */
+  a[href]:after {
+    content: none !important;
+  }
+
+  /* Tableaux */
+  table {
+    page-break-inside: auto;
+  }
+
+  tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  tfoot {
+    display: table-footer-group;
+  }
+
+  /* Images */
+  img {
+    max-width: 100% !important;
+    page-break-inside: avoid;
+  }
+
+  /* Titres */
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Listes */
+  ul, ol {
+    page-break-inside: avoid;
+  }
+
+  /* Blocs de code */
+  pre, blockquote {
+    page-break-inside: avoid;
+    border: 1px solid #999;
+    page-break-before: avoid;
+  }
+}
+
+/* Styles supplémentaires pour une meilleure impression */
+@media print {
+  /* Forcer l'impression des couleurs de fond */
+  body {
+    background: white;
+  }
+
+  /* Améliorer la lisibilité */
+  p, li {
+    orphans: 3;
+    widows: 3;
+  }
+
+  /* Éviter les espaces vides en haut de page */
+  h2, h3 {
+    page-break-after: avoid;
+  }
+}
