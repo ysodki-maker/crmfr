@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, X } from 'lucide-react';
-import { projetService, userService } from '../../services/api';
+import { projetService, userService, authService } from '../../services/api';
 import Header from '../../components/layout/Header';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
@@ -13,6 +13,7 @@ const ProjetCreate = () => {
   const [error, setError] = useState('');
   const [users, setUsers] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
+  const [currentUser, setCurrentUser] = useState(null);
   
   const [formData, setFormData] = useState({
     type_projet: 'RIDEAU',
@@ -25,25 +26,37 @@ const ProjetCreate = () => {
 
   const [errors, setErrors] = useState({});
 
-  // Charger la liste des utilisateurs au montage du composant
+  // Charger l'utilisateur actuel et la liste des utilisateurs
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        setLoadingUsers(true);
-        const response = await userService.getAll();
-        if (response.success) {
-          setUsers(response.data || []);
-        }
-      } catch (err) {
-        console.error('Erreur lors du chargement des utilisateurs:', err);
-        // On continue même si le chargement échoue
-      } finally {
-        setLoadingUsers(false);
-      }
-    };
+    const user = authService.getCurrentUser();
+    setCurrentUser(user);
+
+    // Si l'utilisateur est SOMFY, définir automatiquement le responsable et le type de projet
+    if (user?.role === 'SOMFY' || user?.data?.role === 'SOMFY') {
+      setFormData(prev => ({
+        ...prev,
+        type_projet: 'RIDEAU', // Forcer RIDEAU pour SOMFY
+        responsable: 'SOMFY'
+      }));
+    }
 
     fetchUsers();
   }, []);
+
+  const fetchUsers = async () => {
+    try {
+      setLoadingUsers(true);
+      const response = await userService.getAll();
+      if (response.success) {
+        setUsers(response.data || []);
+      }
+    } catch (err) {
+      console.error('Erreur lors du chargement des utilisateurs:', err);
+      // On continue même si le chargement échoue
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -116,12 +129,31 @@ const ProjetCreate = () => {
         setError(response.message || 'Erreur lors de la création du projet');
       }
     } catch (err) {
-      setError('Une erreur est survenue lors de la création du projet');
-      console.error('Erreur:', err);
+      console.error('Erreur complète:', err);
+      console.error('Réponse erreur:', err.response);
+      
+      // Gestion spécifique selon le type d'erreur
+      if (err.response?.status === 403) {
+        setError('❌ Accès refusé : Vous n\'avez pas les permissions nécessaires pour créer un projet. Veuillez contacter votre administrateur.');
+      } else if (err.response?.status === 401) {
+        setError('🔒 Session expirée : Veuillez vous reconnecter.');
+        setTimeout(() => {
+          navigate('/login');
+        }, 2000);
+      } else if (err.response?.data?.message) {
+        setError(err.response.data.message);
+      } else if (err.message) {
+        setError(err.message);
+      } else {
+        setError('Une erreur est survenue lors de la création du projet');
+      }
     } finally {
       setLoading(false);
     }
   };
+
+  // Vérifier si l'utilisateur est SOMFY
+  const isSomfyUser = currentUser?.role === 'SOMFY' || currentUser?.data?.role === 'SOMFY';
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -165,63 +197,89 @@ const ProjetCreate = () => {
                       Type de projet
                       <span className="text-red-500 ml-1">*</span>
                     </label>
-                    <div className="grid grid-cols-2 gap-4">
-                      <label className={`
-                        relative flex items-center justify-center p-4 rounded-xl border-2 cursor-pointer transition-all
-                        ${formData.type_projet === 'RIDEAU' 
-                          ? 'border-primary-500 bg-primary-50' 
-                          : 'border-neutral-200 hover:border-neutral-300 bg-white'
-                        }
-                      `}>
-                        <input
-                          type="radio"
-                          name="type_projet"
-                          value="RIDEAU"
-                          checked={formData.type_projet === 'RIDEAU'}
-                          onChange={handleChange}
-                          className="sr-only"
-                        />
-                        <div className="text-center">
-                          <div className="text-2xl mb-2">🪟</div>
-                          <div className="font-semibold text-neutral-900">Rideau</div>
-                        </div>
-                        {formData.type_projet === 'RIDEAU' && (
+                    
+                    {isSomfyUser ? (
+                      // Pour les utilisateurs SOMFY : afficher uniquement Rideau en lecture seule
+                      <div className="w-full">
+                        <div className="relative flex items-center justify-center p-4 rounded-xl border-2 border-primary-500 bg-primary-50">
+                          <div className="text-center">
+                            <div className="text-2xl mb-2">🪟</div>
+                            <div className="font-semibold text-neutral-900">Rideau</div>
+                          </div>
                           <div className="absolute top-2 right-2">
                             <svg className="w-5 h-5 text-primary-500" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                             </svg>
                           </div>
-                        )}
-                      </label>
+                        </div>
+                        <p className="mt-2 text-sm text-neutral-500 flex items-center gap-1">
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                          </svg>
+                          Les utilisateurs SOMFY ne peuvent créer que des projets de type <strong>Rideau</strong>
+                        </p>
+                      </div>
+                    ) : (
+                      // Pour les autres utilisateurs : afficher les deux options
+                      <div className="grid grid-cols-2 gap-4">
+                        <label className={`
+                          relative flex items-center justify-center p-4 rounded-xl border-2 cursor-pointer transition-all
+                          ${formData.type_projet === 'RIDEAU' 
+                            ? 'border-primary-500 bg-primary-50' 
+                            : 'border-neutral-200 hover:border-neutral-300 bg-white'
+                          }
+                        `}>
+                          <input
+                            type="radio"
+                            name="type_projet"
+                            value="RIDEAU"
+                            checked={formData.type_projet === 'RIDEAU'}
+                            onChange={handleChange}
+                            className="sr-only"
+                          />
+                          <div className="text-center">
+                            <div className="text-2xl mb-2">🪟</div>
+                            <div className="font-semibold text-neutral-900">Rideau</div>
+                          </div>
+                          {formData.type_projet === 'RIDEAU' && (
+                            <div className="absolute top-2 right-2">
+                              <svg className="w-5 h-5 text-primary-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                              </svg>
+                            </div>
+                          )}
+                        </label>
 
-                      <label className={`
-                        relative flex items-center justify-center p-4 rounded-xl border-2 cursor-pointer transition-all
-                        ${formData.type_projet === 'WALLPAPER' 
-                          ? 'border-primary-500 bg-primary-50' 
-                          : 'border-neutral-200 hover:border-neutral-300 bg-white'
-                        }
-                      `}>
-                        <input
-                          type="radio"
-                          name="type_projet"
-                          value="WALLPAPER"
-                          checked={formData.type_projet === 'WALLPAPER'}
-                          onChange={handleChange}
-                          className="sr-only"
-                        />
-                        <div className="text-center">
-                          <div className="text-2xl mb-2">🖼️</div>
-                          <div className="font-semibold text-neutral-900">Papier Peint</div>
-                        </div>
-                        {formData.type_projet === 'WALLPAPER' && (
-                          <div className="absolute top-2 right-2">
-                            <svg className="w-5 h-5 text-primary-500" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                            </svg>
+                        <label className={`
+                          relative flex items-center justify-center p-4 rounded-xl border-2 cursor-pointer transition-all
+                          ${formData.type_projet === 'WALLPAPER' 
+                            ? 'border-primary-500 bg-primary-50' 
+                            : 'border-neutral-200 hover:border-neutral-300 bg-white'
+                          }
+                        `}>
+                          <input
+                            type="radio"
+                            name="type_projet"
+                            value="WALLPAPER"
+                            checked={formData.type_projet === 'WALLPAPER'}
+                            onChange={handleChange}
+                            className="sr-only"
+                          />
+                          <div className="text-center">
+                            <div className="text-2xl mb-2">🖼️</div>
+                            <div className="font-semibold text-neutral-900">Papier Peint</div>
                           </div>
-                        )}
-                      </label>
-                    </div>
+                          {formData.type_projet === 'WALLPAPER' && (
+                            <div className="absolute top-2 right-2">
+                              <svg className="w-5 h-5 text-primary-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                              </svg>
+                            </div>
+                          )}
+                        </label>
+                      </div>
+                    )}
+                    
                     {errors.type_projet && (
                       <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
                         <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -280,32 +338,46 @@ const ProjetCreate = () => {
                       <label className="block text-sm font-semibold text-neutral-700 mb-2">
                         Responsable
                       </label>
-                      <select
-                        name="responsable"
-                        value={formData.responsable}
-                        onChange={handleChange}
-                        disabled={loadingUsers}
-                        className={`
-                          w-full px-4 py-2.5 rounded-xl border-2 
-                          bg-white text-neutral-900
-                          transition-all duration-200
-                          focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500
-                          disabled:bg-neutral-100 disabled:cursor-not-allowed
-                          ${errors.responsable 
-                            ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
-                            : 'border-neutral-200 hover:border-neutral-300'
-                          }
-                        `}
-                      >
-                        <option value="">
-                          {loadingUsers ? 'Chargement...' : 'Sélectionner un responsable'}
-                        </option>
-                        {users.map((user) => (
-                          <option key={user.id} value={user.first_name}>
-                            {user.first_name} {user.last_name ? ` ${user.last_name}` : ''}
+                      
+                      {isSomfyUser ? (
+                        // Si l'utilisateur est SOMFY, afficher un champ en lecture seule
+                        <div className="w-full px-4 py-2.5 rounded-xl border-2 border-neutral-200 bg-neutral-50 text-neutral-700 flex items-center gap-2">
+                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary-100 text-primary-700 text-xs font-bold">
+                            S
+                          </span>
+                          <span className="font-medium">SOMFY</span>
+                          <span className="ml-auto text-xs text-neutral-500">(Automatique)</span>
+                        </div>
+                      ) : (
+                        // Sinon, afficher la liste déroulante normale
+                        <select
+                          name="responsable"
+                          value={formData.responsable}
+                          onChange={handleChange}
+                          disabled={loadingUsers}
+                          className={`
+                            w-full px-4 py-2.5 rounded-xl border-2 
+                            bg-white text-neutral-900
+                            transition-all duration-200
+                            focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500
+                            disabled:bg-neutral-100 disabled:cursor-not-allowed
+                            ${errors.responsable 
+                              ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
+                              : 'border-neutral-200 hover:border-neutral-300'
+                            }
+                          `}
+                        >
+                          <option value="">
+                            {loadingUsers ? 'Chargement...' : 'Sélectionner un responsable'}
                           </option>
-                        ))}
-                      </select>
+                          {users.map((user) => (
+                            <option key={user.id} value={user.first_name}>
+                              {user.first_name} {user.last_name ? ` ${user.last_name}` : ''}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                      
                       {errors.responsable && (
                         <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
                           <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">

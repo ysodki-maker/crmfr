@@ -26,7 +26,10 @@ import UserEdit from "../pages/users/UserEdit";
 const MainLayout = ({ children }) => (
   <div className="flex h-screen overflow-hidden bg-neutral-50">
     <Sidebar />
-    <div className="flex-1 overflow-hidden">{children}</div>
+    {/* Main Content Area with mobile padding */}
+    <div className="flex-1 flex flex-col overflow-hidden pt-16 lg:pt-0">
+      {children}
+    </div>
   </div>
 );
 
@@ -34,37 +37,6 @@ const AppRoutes = () => {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Routes Utilisateurs */}
-        <Route
-          path="/users"
-          element={
-            <PrivateRoute requiredRole="ADMIN">
-              <MainLayout>
-                <UsersList />
-              </MainLayout>
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/users/create"
-          element={
-            <PrivateRoute requiredRole="ADMIN">
-              <MainLayout>
-                <UserCreate />
-              </MainLayout>
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/users/:id/edit"
-          element={
-            <PrivateRoute requiredRole="ADMIN">
-              <MainLayout>
-                <UserEdit />
-              </MainLayout>
-            </PrivateRoute>
-          }
-        />
         {/* Routes publiques */}
         <Route
           path="/login"
@@ -128,11 +100,6 @@ const AppRoutes = () => {
             </PrivateRoute>
           }
         />
-
-        {/* Redirect par défaut */}
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
-
         <Route
           path="/projets/:projetId/espaces"
           element={
@@ -154,6 +121,18 @@ const AppRoutes = () => {
           }
         />
         <Route
+          path="/projets/:projetId/mesures"
+          element={
+            <PrivateRoute>
+              <MainLayout>
+                <ProjetMesures />
+              </MainLayout>
+            </PrivateRoute>
+          }
+        />
+
+        {/* Routes Espaces */}
+        <Route
           path="/espaces/:id"
           element={
             <PrivateRoute>
@@ -173,16 +152,42 @@ const AppRoutes = () => {
             </PrivateRoute>
           }
         />
+
+        {/* Routes Utilisateurs */}
         <Route
-          path="/projets/:projetId/mesures"
+          path="/users"
           element={
-            <PrivateRoute>
+            <PrivateRoute requiredRole="ADMIN">
               <MainLayout>
-                <ProjetMesures />
+                <UsersList />
               </MainLayout>
             </PrivateRoute>
           }
         />
+        <Route
+          path="/users/create"
+          element={
+            <PrivateRoute requiredRole="ADMIN">
+              <MainLayout>
+                <UserCreate />
+              </MainLayout>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/users/:id/edit"
+          element={
+            <PrivateRoute requiredRole="ADMIN">
+              <MainLayout>
+                <UserEdit />
+              </MainLayout>
+            </PrivateRoute>
+          }
+        />
+
+        {/* Redirect par défaut */}
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </BrowserRouter>
   );

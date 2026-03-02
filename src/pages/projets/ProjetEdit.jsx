@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Save, X, Loader2 } from 'lucide-react';
-import { projetService } from '../../services/api';
+import { projetService, authService } from '../../services/api';
 import Header from '../../components/layout/Header';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
@@ -13,6 +13,7 @@ const ProjetEdit = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [currentUser, setCurrentUser] = useState(null);
   
   const [formData, setFormData] = useState({
     type_projet: 'RIDEAU',
@@ -26,6 +27,10 @@ const ProjetEdit = () => {
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
+    // Charger l'utilisateur actuel
+    const user = authService.getCurrentUser();
+    setCurrentUser(user);
+    
     fetchProjet();
   }, [id]);
 
@@ -131,6 +136,9 @@ const ProjetEdit = () => {
     }
   };
 
+  // Vérifier si l'utilisateur est SOMFY
+  const isSomfyUser = currentUser?.role === 'SOMFY' || currentUser?.data?.role === 'SOMFY';
+
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -181,63 +189,89 @@ const ProjetEdit = () => {
                       Type de projet
                       <span className="text-red-500 ml-1">*</span>
                     </label>
-                    <div className="grid grid-cols-2 gap-4">
-                      <label className={`
-                        relative flex items-center justify-center p-4 rounded-xl border-2 cursor-pointer transition-all
-                        ${formData.type_projet === 'RIDEAU' 
-                          ? 'border-primary-500 bg-primary-50' 
-                          : 'border-neutral-200 hover:border-neutral-300 bg-white'
-                        }
-                      `}>
-                        <input
-                          type="radio"
-                          name="type_projet"
-                          value="RIDEAU"
-                          checked={formData.type_projet === 'RIDEAU'}
-                          onChange={handleChange}
-                          className="sr-only"
-                        />
-                        <div className="text-center">
-                          <div className="text-2xl mb-2">🪟</div>
-                          <div className="font-semibold text-neutral-900">Rideau</div>
-                        </div>
-                        {formData.type_projet === 'RIDEAU' && (
+                    
+                    {isSomfyUser ? (
+                      // Pour les utilisateurs SOMFY : afficher uniquement Rideau en lecture seule
+                      <div className="w-full">
+                        <div className="relative flex items-center justify-center p-4 rounded-xl border-2 border-primary-500 bg-primary-50">
+                          <div className="text-center">
+                            <div className="text-2xl mb-2">🪟</div>
+                            <div className="font-semibold text-neutral-900">Rideau</div>
+                          </div>
                           <div className="absolute top-2 right-2">
                             <svg className="w-5 h-5 text-primary-500" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                             </svg>
                           </div>
-                        )}
-                      </label>
+                        </div>
+                        <p className="mt-2 text-sm text-neutral-500 flex items-center gap-1">
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                          </svg>
+                          Les utilisateurs SOMFY ne peuvent modifier que des projets de type <strong>Rideau</strong>
+                        </p>
+                      </div>
+                    ) : (
+                      // Pour les autres utilisateurs : afficher les deux options
+                      <div className="grid grid-cols-2 gap-4">
+                        <label className={`
+                          relative flex items-center justify-center p-4 rounded-xl border-2 cursor-pointer transition-all
+                          ${formData.type_projet === 'RIDEAU' 
+                            ? 'border-primary-500 bg-primary-50' 
+                            : 'border-neutral-200 hover:border-neutral-300 bg-white'
+                          }
+                        `}>
+                          <input
+                            type="radio"
+                            name="type_projet"
+                            value="RIDEAU"
+                            checked={formData.type_projet === 'RIDEAU'}
+                            onChange={handleChange}
+                            className="sr-only"
+                          />
+                          <div className="text-center">
+                            <div className="text-2xl mb-2">🪟</div>
+                            <div className="font-semibold text-neutral-900">Rideau</div>
+                          </div>
+                          {formData.type_projet === 'RIDEAU' && (
+                            <div className="absolute top-2 right-2">
+                              <svg className="w-5 h-5 text-primary-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                              </svg>
+                            </div>
+                          )}
+                        </label>
 
-                      <label className={`
-                        relative flex items-center justify-center p-4 rounded-xl border-2 cursor-pointer transition-all
-                        ${formData.type_projet === 'WALLPAPER' 
-                          ? 'border-primary-500 bg-primary-50' 
-                          : 'border-neutral-200 hover:border-neutral-300 bg-white'
-                        }
-                      `}>
-                        <input
-                          type="radio"
-                          name="type_projet"
-                          value="WALLPAPER"
-                          checked={formData.type_projet === 'WALLPAPER'}
-                          onChange={handleChange}
-                          className="sr-only"
-                        />
-                        <div className="text-center">
-                          <div className="text-2xl mb-2">🖼️</div>
-                          <div className="font-semibold text-neutral-900">Papier Peint</div>
-                        </div>
-                        {formData.type_projet === 'WALLPAPER' && (
-                          <div className="absolute top-2 right-2">
-                            <svg className="w-5 h-5 text-primary-500" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                            </svg>
+                        <label className={`
+                          relative flex items-center justify-center p-4 rounded-xl border-2 cursor-pointer transition-all
+                          ${formData.type_projet === 'WALLPAPER' 
+                            ? 'border-primary-500 bg-primary-50' 
+                            : 'border-neutral-200 hover:border-neutral-300 bg-white'
+                          }
+                        `}>
+                          <input
+                            type="radio"
+                            name="type_projet"
+                            value="WALLPAPER"
+                            checked={formData.type_projet === 'WALLPAPER'}
+                            onChange={handleChange}
+                            className="sr-only"
+                          />
+                          <div className="text-center">
+                            <div className="text-2xl mb-2">🖼️</div>
+                            <div className="font-semibold text-neutral-900">Papier Peint</div>
                           </div>
-                        )}
-                      </label>
-                    </div>
+                          {formData.type_projet === 'WALLPAPER' && (
+                            <div className="absolute top-2 right-2">
+                              <svg className="w-5 h-5 text-primary-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                              </svg>
+                            </div>
+                          )}
+                        </label>
+                      </div>
+                    )}
+                    
                     {errors.type_projet && (
                       <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
                         <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">

@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
@@ -13,7 +14,8 @@ import {
 } from "lucide-react";
 import { espaceService, projetService } from "../../services/api";
 import Button from "../../components/common/Button";
-
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas-pro";
 const ProjetMesures = () => {
   const { projetId } = useParams();
   const navigate = useNavigate();
@@ -53,8 +55,137 @@ const ProjetMesures = () => {
     }
   };
 
-  const handlePrint = () => {
-    window.print();
+  const handlePrint = async () => {
+    const element = printRef.current;
+    if (!element) return;
+
+    const A4_WIDTH_PX = 794;
+    const MARGIN_PX = 40;
+
+    const wrapper = document.createElement("div");
+    wrapper.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: -9999px;
+    width: ${A4_WIDTH_PX}px;
+    background: white;
+    z-index: -1;
+  `;
+
+    const clone = element.cloneNode(true);
+    clone.style.cssText = `
+    width: ${A4_WIDTH_PX}px;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    padding: ${MARGIN_PX}px;
+    background: white;
+    box-sizing: border-box;
+  `;
+
+    wrapper.appendChild(clone);
+    document.body.appendChild(wrapper);
+
+    await new Promise((resolve) => setTimeout(resolve, 400));
+
+    try {
+      const canvas = await html2canvas(clone, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        width: A4_WIDTH_PX,
+        height: clone.scrollHeight,
+        windowWidth: A4_WIDTH_PX,
+        windowHeight: clone.scrollHeight,
+        scrollX: 0,
+        scrollY: 0,
+        backgroundColor: "#ffffff",
+      });
+
+      const pdf = new jsPDF({
+        unit: "mm",
+        format: "a4",
+        orientation: "portrait",
+      });
+
+      const PDF_W = 210;
+      const PDF_H = 297;
+      const ratio = PDF_W / canvas.width;
+      const totalHeightMm = canvas.height * ratio;
+
+      // Détecte les positions des blocs "espace" dans le clone
+      // pour éviter de couper en plein milieu d'un en-tête
+      const espaceBlocks = Array.from(
+        clone.querySelectorAll("[data-espace-block]"),
+      );
+
+      // Calcule les "safe cut points" : on peut couper juste AVANT chaque bloc espace
+      const safeCutPointsMm = espaceBlocks.map((block) => {
+        const blockRect = block.getBoundingClientRect();
+        const cloneRect = clone.getBoundingClientRect();
+        const relativeTopPx = blockRect.top - cloneRect.top;
+        return relativeTopPx * ratio; // convertit en mm
+      });
+
+      // Génère les pages en cherchant le meilleur point de coupure
+      const pages = [];
+      let currentStart = 0;
+
+      while (currentStart < totalHeightMm) {
+        const idealEnd = currentStart + PDF_H;
+
+        if (idealEnd >= totalHeightMm) {
+          pages.push({ start: currentStart, end: totalHeightMm });
+          break;
+        }
+
+        // Cherche un safe cut point juste avant idealEnd
+        const safeCut = safeCutPointsMm
+          .filter((pt) => pt > currentStart + 20 && pt <= idealEnd)
+          .pop(); // le plus proche de idealEnd
+
+        const pageEnd = safeCut ?? idealEnd;
+        pages.push({ start: currentStart, end: pageEnd });
+        currentStart = pageEnd;
+      }
+
+      // Génère les pages PDF
+      for (let i = 0; i < pages.length; i++) {
+        if (i > 0) pdf.addPage();
+
+        const { start, end } = pages[i];
+        const heightMm = end - start;
+
+        const srcY = start / ratio;
+        const srcH = heightMm / ratio;
+
+        const sliceCanvas = document.createElement("canvas");
+        sliceCanvas.width = canvas.width;
+        sliceCanvas.height = Math.ceil(srcH);
+
+        const ctx = sliceCanvas.getContext("2d");
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, sliceCanvas.width, sliceCanvas.height);
+        ctx.drawImage(
+          canvas,
+          0,
+          Math.floor(srcY),
+          canvas.width,
+          Math.ceil(srcH),
+          0,
+          0,
+          canvas.width,
+          Math.ceil(srcH),
+        );
+
+        const imgData = sliceCanvas.toDataURL("image/jpeg", 0.98);
+        pdf.addImage(imgData, "JPEG", 0, 0, PDF_W, heightMm);
+      }
+
+      pdf.save(`fiche-mesures-${String(projetId).padStart(6, "0")}.pdf`);
+    } finally {
+      document.body.removeChild(wrapper);
+    }
   };
 
   const getTotalDetails = () => {
@@ -81,9 +212,13 @@ const ProjetMesures = () => {
       <div className="flex h-screen items-center justify-center bg-white">
         <div className="text-center space-y-4">
           <Building2 className="w-16 h-16 text-gray-900 mx-auto" />
-          <h2 className="text-2xl font-bold text-gray-900">Projet introuvable</h2>
+          <h2 className="text-2xl font-bold text-gray-900">
+            Projet introuvable
+          </h2>
           <p className="text-gray-600">{error}</p>
-          <Button onClick={() => navigate("/projets")}>Retour aux projets</Button>
+          <Button onClick={() => navigate("/projets")}>
+            Retour aux projets
+          </Button>
         </div>
       </div>
     );
@@ -177,7 +312,10 @@ const ProjetMesures = () => {
       </div>
 
       {/* Contenu PDF à télécharger comme PDF */}
-      <div ref={printRef} className="max-w-[1200px] mx-auto p-8 print:p-0 h-screen overflow-y-auto">
+      <div
+        ref={printRef}
+        className="max-w-[1200px] mx-auto p-8 print:p-0 h-screen overflow-y-auto"
+      >
         {/* En-tête du document */}
         <div className="mb-12 no-break">
           <div className="border-b-4 border-gray-900 pb-8 mb-8">
@@ -193,7 +331,9 @@ const ProjetMesures = () => {
                 </h1>
                 <p className="text-xl text-gray-600 monospace flex items-center gap-2">
                   <span className="text-gray-400">Référence</span>
-                  <span className="font-bold">#{String(projetId).padStart(6, "0")}</span>
+                  <span className="font-bold">
+                    #{String(projetId).padStart(6, "0")}
+                  </span>
                 </p>
               </div>
               <div className="text-right bg-gray-50 p-6 border-2 border-gray-900">
@@ -245,7 +385,9 @@ const ProjetMesures = () => {
                 Informations du Projet
               </h2>
               <span className="text-xs uppercase tracking-wider bg-white/20 px-3 py-1 rounded">
-                {projet.type_projet === "WALLPAPER" ? "Papier Peint" : "Rideaux"}
+                {projet.type_projet === "WALLPAPER"
+                  ? "Papier Peint"
+                  : "Rideaux"}
               </span>
             </div>
             <table className="w-full">
@@ -262,7 +404,9 @@ const ProjetMesures = () => {
                   <td className="px-6 py-4 font-bold text-gray-900 bg-gray-50 uppercase text-sm tracking-wider">
                     Client
                   </td>
-                  <td className="px-6 py-4 text-gray-900">{projet.client_name}</td>
+                  <td className="px-6 py-4 text-gray-900">
+                    {projet.client_name}
+                  </td>
                 </tr>
                 <tr className="border-b border-gray-300">
                   <td className="px-6 py-4 font-bold text-gray-900 bg-gray-50 uppercase text-sm tracking-wider">
@@ -274,7 +418,9 @@ const ProjetMesures = () => {
                   <td className="px-6 py-4 font-bold text-gray-900 bg-gray-50 uppercase text-sm tracking-wider">
                     Responsable
                   </td>
-                  <td className="px-6 py-4 text-gray-900">{projet.responsable}</td>
+                  <td className="px-6 py-4 text-gray-900">
+                    {projet.responsable}
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -289,7 +435,9 @@ const ProjetMesures = () => {
               Liste des Espaces
             </h2>
             <div className="flex items-center gap-2 text-sm">
-              <span className="text-gray-500 uppercase tracking-wide">Total:</span>
+              <span className="text-gray-500 uppercase tracking-wide">
+                Total:
+              </span>
               <span className="font-bold monospace text-xl text-gray-900">
                 {espaces.length}
               </span>
@@ -299,8 +447,12 @@ const ProjetMesures = () => {
           {espaces.length === 0 ? (
             <div className="border-2 border-gray-300 p-12 text-center">
               <Building2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-xl font-bold text-gray-900 mb-2">Aucun espace</p>
-              <p className="text-gray-500">Ce projet ne contient pas encore d'espaces</p>
+              <p className="text-xl font-bold text-gray-900 mb-2">
+                Aucun espace
+              </p>
+              <p className="text-gray-500">
+                Ce projet ne contient pas encore d'espaces
+              </p>
             </div>
           ) : (
             <div className="border-2 border-gray-900">
@@ -320,7 +472,9 @@ const ProjetMesures = () => {
                 </thead>
                 <tbody>
                   {espaces.map((espace, index) => {
-                    const detailsCount = (espace.rideaux?.length || 0) + (espace.wallpapers?.length || 0);
+                    const detailsCount =
+                      (espace.rideaux?.length || 0) +
+                      (espace.wallpapers?.length || 0);
                     return (
                       <tr
                         key={espace.id}
@@ -335,7 +489,9 @@ const ProjetMesures = () => {
                         <td className="px-6 py-4 text-center monospace font-semibold text-gray-900">
                           {detailsCount}
                           <span className="text-xs text-gray-500 ml-1">
-                            {projet.type_projet === "RIDEAU" ? "rideau(x)" : "papier(s)"}
+                            {projet.type_projet === "RIDEAU"
+                              ? "rideau(x)"
+                              : "papier(s)"}
                           </span>
                         </td>
                       </tr>
@@ -349,7 +505,7 @@ const ProjetMesures = () => {
 
         {/* Détails de chaque espace */}
         {espaces.map((espace, index) => (
-          <div key={espace.id} className="mb-12 no-break page-break">
+          <div key={espace.id} className="mb-12" data-espace-block="true">
             <div className="border-2 border-gray-900">
               {/* En-tête espace */}
               <div className="bg-gray-900 text-white px-6 py-5">
@@ -359,7 +515,9 @@ const ProjetMesures = () => {
                       {String(index + 1).padStart(2, "0")}
                     </div>
                     <div className="border-l-2 border-white/30 pl-4">
-                      <h3 className="text-2xl font-bold mb-1">{espace.espace_name}</h3>
+                      <h3 className="text-2xl font-bold mb-1">
+                        {espace.espace_name}
+                      </h3>
                       <p className="text-sm text-gray-300 monospace">
                         Référence: ESP-{String(espace.id).padStart(4, "0")}
                       </p>
@@ -384,7 +542,10 @@ const ProjetMesures = () => {
                     </div>
 
                     {espace.rideaux.map((rideau, rIndex) => (
-                      <div key={rIndex} className="mb-6 border-2 border-gray-900">
+                      <div
+                        key={rIndex}
+                        className="mb-6 border-2 border-gray-900"
+                      >
                         <div className="bg-gray-900 text-white px-4 py-3 flex items-center justify-between">
                           <h5 className="font-bold uppercase tracking-wide flex items-center gap-3">
                             <span className="text-2xl monospace">
@@ -558,7 +719,10 @@ const ProjetMesures = () => {
                     </div>
 
                     {espace.wallpapers.map((wallpaper, wIndex) => (
-                      <div key={wIndex} className="mb-6 border-2 border-gray-900">
+                      <div
+                        key={wIndex}
+                        className="mb-6 border-2 border-gray-900"
+                      >
                         <div className="bg-gray-900 text-white px-4 py-3 flex items-center justify-between">
                           <h5 className="font-bold uppercase tracking-wide flex items-center gap-3">
                             <span className="text-2xl monospace">
@@ -654,7 +818,9 @@ const ProjetMesures = () => {
               <p className="text-xs uppercase tracking-wider text-gray-500 mb-1">
                 Document généré par
               </p>
-              <p className="font-bold text-gray-900">Système CRM - Mesures v2.0</p>
+              <p className="font-bold text-gray-900">
+                Système CRM - Mesures v2.0
+              </p>
             </div>
             <div className="text-right">
               <p className="text-xs uppercase tracking-wider text-gray-500 mb-1">

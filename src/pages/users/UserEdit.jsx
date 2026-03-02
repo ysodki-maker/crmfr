@@ -537,6 +537,7 @@ const UserEdit = () => {
                         >
                           <option value="UTILISATEUR">Utilisateur</option>
                           <option value="ADMIN">Administrateur</option>
+                          <option value="SOMFY">Somfy</option>
                         </select>
                       </div>
                       <p className="mt-1 text-xs text-neutral-500">

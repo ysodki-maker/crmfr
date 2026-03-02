@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Save, X, Plus, Trash2 } from "lucide-react";
-import { projetService, espaceService } from "../../services/api";
+import { projetService, espaceService, authService } from "../../services/api";
 import Header from "../../components/layout/Header";
 import Button from "../../components/common/Button";
 import Input from "../../components/common/Input";
@@ -15,12 +15,16 @@ const EspaceCreate = () => {
   const [loadingProjet, setLoadingProjet] = useState(true);
   const [error, setError] = useState("");
   const [projet, setProjet] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
 
   const [formData, setFormData] = useState({
     projet_id: projetId,
     espace_name: "",
     details: null,
   });
+
+  // Nouvel état pour le nom de l'enfant
+  const [nomEnfant, setNomEnfant] = useState("");
 
   // État pour plusieurs détails Rideau avec largeur/hauteur
   const [rideauxDetails, setRideauxDetails] = useState([
@@ -54,6 +58,10 @@ const EspaceCreate = () => {
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
+    // Charger l'utilisateur actuel
+    const user = authService.getCurrentUser();
+    setCurrentUser(user);
+
     fetchProjet();
   }, [projetId]);
 
@@ -79,6 +87,11 @@ const EspaceCreate = () => {
       ...prev,
       [name]: value,
     }));
+
+    // Réinitialiser le nom de l'enfant si on change de type d'espace
+    if (name === "espace_name" && value !== "Chambre Enfant") {
+      setNomEnfant("");
+    }
 
     if (errors[name]) {
       setErrors((prev) => ({
@@ -158,13 +171,19 @@ const EspaceCreate = () => {
       newErrors.espace_name = "Le nom de l'espace est requis";
     }
 
+    // Validation du nom de l'enfant si "Chambre Enfant" est sélectionné
+    if (formData.espace_name === "Chambre Enfant" && !nomEnfant.trim()) {
+      newErrors.nomEnfant = "Le nom de l'enfant est requis";
+    }
+
     // Validation pour les rideaux - au moins un rideau doit avoir largeur et hauteur
     if (projet?.type_projet === "RIDEAU") {
       const hasValidRideau = rideauxDetails.some(
-        (rideau) => rideau.largeur && rideau.hauteur
+        (rideau) => rideau.largeur && rideau.hauteur,
       );
       if (!hasValidRideau) {
-        newErrors.rideaux = "Au moins un rideau doit avoir une largeur et une hauteur";
+        newErrors.rideaux =
+          "Au moins un rideau doit avoir une largeur et une hauteur";
       }
     }
 
@@ -183,9 +202,16 @@ const EspaceCreate = () => {
     setLoading(true);
 
     try {
+      // Construire le nom complet de l'espace
+      let finalEspaceName = formData.espace_name;
+      if (formData.espace_name === "Chambre Enfant" && nomEnfant.trim()) {
+        finalEspaceName = `Chambre Enfant ${nomEnfant.trim()}`;
+      }
+
       // Préparer les données selon le type de projet
       const espaceData = {
         ...formData,
+        espace_name: finalEspaceName, // Utiliser le nom combiné
         details: null,
       };
 
@@ -232,6 +258,9 @@ const EspaceCreate = () => {
     }
   };
 
+  // Vérifier si l'utilisateur est SOMFY
+  const isSomfyUser = currentUser?.role === 'SOMFY' || currentUser?.data?.role === 'SOMFY';
+
   if (loadingProjet) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -267,7 +296,10 @@ const EspaceCreate = () => {
               <div className="mb-6">
                 <span className="inline-flex items-center gap-2 px-4 py-2 bg-primary-100 text-primary-700 rounded-xl font-semibold">
                   <span className="w-2 h-2 bg-primary-600 rounded-full"></span>
-                  Type de projet: {projet.type_projet === "WALLPAPER" ? "Papier Peint" : "Rideau"}
+                  Type de projet:{" "}
+                  {projet.type_projet === "WALLPAPER"
+                    ? "Papier Peint"
+                    : "Rideau"}
                 </span>
               </div>
             )}
@@ -296,18 +328,28 @@ const EspaceCreate = () => {
             {/* Form */}
             <form onSubmit={handleSubmit}>
               <div className="space-y-6">
-                {/* Informations générales - SIMPLIFIED */}
+                {/* Informations générales */}
                 <Card title="Informations de l'espace">
                   <div className="grid grid-cols-1 gap-6">
                     <div>
                       <label className="block text-sm font-semibold text-neutral-700 mb-2">
                         Nom de l'espace
+                        <span className="text-red-500 ml-1">*</span>
                       </label>
                       <select
                         name="espace_name"
                         value={formData.espace_name}
                         onChange={handleChange}
-                        className="input"
+                        className={`
+                          w-full px-4 py-2.5 rounded-xl border-2 
+                          bg-white text-neutral-900
+                          transition-all duration-200
+                          focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500
+                          ${errors.espace_name 
+                            ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
+                            : 'border-neutral-200 hover:border-neutral-300'
+                          }
+                        `}
                         required
                       >
                         <option value="">Sélectionner...</option>
@@ -327,7 +369,64 @@ const EspaceCreate = () => {
                         <option value="Cave">Cave</option>
                         <option value="Autre">Autre</option>
                       </select>
+                      {errors.espace_name && (
+                        <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                          </svg>
+                          {errors.espace_name}
+                        </p>
+                      )}
                     </div>
+
+                    {/* Champ conditionnel pour le nom de l'enfant */}
+                    {formData.espace_name === "Chambre Enfant" && (
+                      <div className="animate-slide-down">
+                        <label className="block text-sm font-semibold text-neutral-700 mb-2">
+                          Nom de l'enfant
+                          <span className="text-red-500 ml-1">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={nomEnfant}
+                          onChange={(e) => {
+                            setNomEnfant(e.target.value);
+                            // Effacer l'erreur quand l'utilisateur tape
+                            if (errors.nomEnfant) {
+                              setErrors(prev => ({
+                                ...prev,
+                                nomEnfant: ""
+                              }));
+                            }
+                          }}
+                          className={`
+                            w-full px-4 py-2.5 rounded-xl border-2 
+                            bg-white text-neutral-900
+                            transition-all duration-200
+                            focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500
+                            ${errors.nomEnfant 
+                              ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
+                              : 'border-neutral-200 hover:border-neutral-300'
+                            }
+                          `}
+                          placeholder="Ex: Yahya"
+                        />
+                        {errors.nomEnfant && (
+                          <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
+                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                            </svg>
+                            {errors.nomEnfant}
+                          </p>
+                        )}
+                        <p className="mt-2 text-sm text-neutral-500 flex items-center gap-1">
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                          </svg>
+                          L'espace sera enregistré comme: <strong>Chambre Enfant {nomEnfant || "..."}</strong>
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </Card>
 
@@ -355,7 +454,7 @@ const EspaceCreate = () => {
                           {/* NOUVEAUX CHAMPS: Largeur et Hauteur */}
                           <div>
                             <label className="block text-sm font-semibold text-neutral-700 mb-2">
-                              Largeur (m)
+                              Largeur (cm)
                             </label>
                             <input
                               type="number"
@@ -370,7 +469,7 @@ const EspaceCreate = () => {
 
                           <div>
                             <label className="block text-sm font-semibold text-neutral-700 mb-2">
-                              Hauteur (m)
+                              Hauteur (cm)
                             </label>
                             <input
                               type="number"
@@ -387,23 +486,48 @@ const EspaceCreate = () => {
                             <label className="block text-sm font-semibold text-neutral-700 mb-2">
                               Type de tringles
                             </label>
-                            <select
-                              name="type_tringles"
-                              value={rideau.type_tringles}
-                              onChange={(e) => handleRideauChange(index, e)}
-                              className="input"
-                            >
-                              <option value="">Sélectionner...</option>
-                              <option value="Tringle Magicwalls">
-                                Tringle Magicwalls
-                              </option>
-                              <option value="Tringle Somfy">
-                                Tringle Somfy
-                              </option>
-                              <option value="Tringle Store bateau">
-                                Tringle Store bateau
-                              </option>
-                            </select>
+                            {isSomfyUser ? (
+                              // Si utilisateur SOMFY, afficher uniquement les options SOMFY
+                              <select
+                                name="type_tringles"
+                                value={rideau.type_tringles}
+                                onChange={(e) => handleRideauChange(index, e)}
+                                className="input"
+                              >
+                                <option value="">Sélectionner...</option>
+                                <option value="Tringle Somfy Manuelle">
+                                  Tringle Somfy Manuelle
+                                </option>
+                                <option value="Tringle Somfy Motorisé">
+                                  Tringle Somfy Motorisé
+                                </option>
+                              </select>
+                            ) : (
+                              // Sinon, afficher la liste complète
+                              <select
+                                name="type_tringles"
+                                value={rideau.type_tringles}
+                                onChange={(e) => handleRideauChange(index, e)}
+                                className="input"
+                              >
+                                <option value="">Sélectionner...</option>
+                                <option value="Tringle Magicwalls Manuelle">
+                                  Tringle Magicwalls Manuelle
+                                </option>
+                                <option value="Tringle Magicwalls Motorisé">
+                                  Tringle Magicwalls Motorisé
+                                </option>
+                                <option value="Tringle Somfy Manuelle">
+                                  Tringle Somfy Manuelle
+                                </option>
+                                <option value="Tringle Somfy Motorisé">
+                                  Tringle Somfy Motorisé
+                                </option>
+                                <option value="Tringle Store bateau">
+                                  Tringle Store bateau
+                                </option>
+                              </select>
+                            )}
                           </div>
 
                           <div>
@@ -501,16 +625,14 @@ const EspaceCreate = () => {
                             <label className="block text-sm font-semibold text-neutral-700 mb-2">
                               Référence tissu
                             </label>
-                            <select
+                            <input
+                              type="text"
                               name="ref_tissu"
                               value={rideau.ref_tissu}
                               onChange={(e) => handleRideauChange(index, e)}
                               className="input"
-                            >
-                              <option value="">Sélectionner...</option>
-                              <option value="Manuelle">Manuelle</option>
-                              <option value="Motorisé">Motorisé</option>
-                            </select>
+                              placeholder="Référence Tissu"
+                            />
                           </div>
 
                           <div>
@@ -566,7 +688,7 @@ const EspaceCreate = () => {
                     {wallpapersDetails.map((wallpaper, index) => (
                       <Card
                         key={wallpaper.id}
-                        title={`Papier Peint ${index + 1}`}
+                        title={`Mur ${index + 1}`}
                         headerAction={
                           wallpapersDetails.length > 1 && (
                             <button
@@ -584,7 +706,7 @@ const EspaceCreate = () => {
                           {/* NOUVEAUX CHAMPS: Largeur et Hauteur */}
                           <div>
                             <label className="block text-sm font-semibold text-neutral-700 mb-2">
-                              Largeur (m)
+                              Largeur (cm)
                             </label>
                             <input
                               type="number"
@@ -599,7 +721,7 @@ const EspaceCreate = () => {
 
                           <div>
                             <label className="block text-sm font-semibold text-neutral-700 mb-2">
-                              Hauteur (m)
+                              Hauteur (cm)
                             </label>
                             <input
                               type="number"

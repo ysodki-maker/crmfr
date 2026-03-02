@@ -352,6 +352,7 @@ const UserCreate = () => {
                           >
                             <option value="UTILISATEUR">Utilisateur</option>
                             <option value="ADMIN">Administrateur</option>
+                            <option value='SOMFY'>SOMFY</option>
                           </select>
                         </div>
                         <p className="mt-1 text-xs text-neutral-500">

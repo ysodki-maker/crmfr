@@ -64,14 +64,23 @@ api.interceptors.response.use(
       }
     }
 
-    // Gestion des erreurs d'authentification (401/403)
-    if (error.response?.status === 401 || error.response?.status === 403) {
+    // Gestion des erreurs d'authentification (401 uniquement)
+    // Token invalide ou expiré
+    if (error.response?.status === 401) {
       // Ne pas rediriger si c'est la page de login
       if (!window.location.pathname.includes('/login')) {
+        console.log('Token invalide ou expiré - Déconnexion automatique');
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         window.location.href = '/login';
       }
+    }
+
+    // Gestion des erreurs de permission (403)
+    // NE PAS déconnecter l'utilisateur - juste logger l'erreur
+    if (error.response?.status === 403) {
+      console.warn('Accès refusé - Permissions insuffisantes:', error.response.data);
+      // L'erreur sera gérée par le composant qui a fait l'appel
     }
 
     return Promise.reject(error);

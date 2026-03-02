@@ -19,7 +19,7 @@ const styles = StyleSheet.create({
     fontFamily: "Helvetica",
     fontSize: 10,
   },
-  
+
   // Header
   header: {
     marginBottom: 30,
@@ -486,7 +486,9 @@ const MesuresPDF = ({ projet, espaces, showEmptyFields, totalDetails }) => {
             <Text style={styles.espacesListTitle}>LISTE DES ESPACES</Text>
             <Text style={styles.espacesListCount}>
               Total:
-              <Text style={styles.espacesListCountNumber}>{espaces.length}</Text>
+              <Text style={styles.espacesListCountNumber}>
+                {espaces.length}
+              </Text>
             </Text>
           </View>
 
@@ -496,25 +498,48 @@ const MesuresPDF = ({ projet, espaces, showEmptyFields, totalDetails }) => {
               <Text style={[styles.tableHeaderCell, { width: "60%" }]}>
                 NOM DE L'ESPACE
               </Text>
-              <Text style={[styles.tableHeaderCell, { width: "30%", textAlign: "center" }]}>
+              <Text
+                style={[
+                  styles.tableHeaderCell,
+                  { width: "30%", textAlign: "center" },
+                ]}
+              >
                 DÉTAILS
               </Text>
             </View>
 
             {espaces.map((espace, index) => {
               const detailsCount =
-                (espace.rideaux?.length || 0) + (espace.wallpapers?.length || 0);
+                (espace.rideaux?.length || 0) +
+                (espace.wallpapers?.length || 0);
               return (
                 <View key={espace.id} style={styles.tableRow}>
-                  <Text style={[styles.tableCell, styles.tableCellBold, { width: "10%" }]}>
+                  <Text
+                    style={[
+                      styles.tableCell,
+                      styles.tableCellBold,
+                      { width: "10%" },
+                    ]}
+                  >
                     {padNumber(index + 1, 2)}
                   </Text>
-                  <Text style={[styles.tableCell, styles.tableCellBold, { width: "60%" }]}>
+                  <Text
+                    style={[
+                      styles.tableCell,
+                      styles.tableCellBold,
+                      { width: "60%" },
+                    ]}
+                  >
                     {espace.espace_name}
                   </Text>
-                  <Text style={[styles.tableCell, { width: "30%", textAlign: "center" }]}>
+                  <Text
+                    style={[
+                      styles.tableCell,
+                      { width: "30%", textAlign: "center" },
+                    ]}
+                  >
                     {detailsCount}{" "}
-                    {projet.type_projet === "RIDEAU" ? "rideau(x)" : "papier(s)"}
+                    {projet.type_projet === "RIDEAU" ? "rideau(x)" : "mur(s)"}
                   </Text>
                 </View>
               );
@@ -530,8 +555,16 @@ const MesuresPDF = ({ projet, espaces, showEmptyFields, totalDetails }) => {
           <View style={styles.espaceDetail}>
             <View style={styles.espaceHeader}>
               <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <Text style={styles.espaceNumber}>{padNumber(index + 1, 2)}</Text>
-                <View style={{ borderLeft: 2, borderLeftColor: "rgba(255,255,255,0.3)", paddingLeft: 15 }}>
+                <Text style={styles.espaceNumber}>
+                  {padNumber(index + 1, 2)}
+                </Text>
+                <View
+                  style={{
+                    borderLeft: 2,
+                    borderLeftColor: "rgba(255,255,255,0.3)",
+                    paddingLeft: 15,
+                  }}
+                >
                   <Text style={styles.espaceName}>{espace.espace_name}</Text>
                   <Text style={styles.espaceReference}>
                     Référence: ESP-{padNumber(espace.id, 4)}
@@ -547,13 +580,17 @@ const MesuresPDF = ({ projet, espaces, showEmptyFields, totalDetails }) => {
                 <View style={styles.detailsSection}>
                   <View style={styles.detailsHeader}>
                     <Text style={styles.detailsTitle}>DÉTAILS DES RIDEAUX</Text>
-                    <Text style={styles.detailsCount}>{espace.rideaux.length}</Text>
+                    <Text style={styles.detailsCount}>
+                      {espace.rideaux.length}
+                    </Text>
                   </View>
 
                   {espace.rideaux.map((rideau, rIndex) => (
                     <View key={rIndex} style={styles.detailCard}>
                       <View style={styles.detailCardHeader}>
-                        <View style={{ flexDirection: "row", alignItems: "center" }}>
+                        <View
+                          style={{ flexDirection: "row", alignItems: "center" }}
+                        >
                           <Text style={styles.detailCardNumber}>
                             {padNumber(rIndex + 1, 2)}
                           </Text>
@@ -570,19 +607,23 @@ const MesuresPDF = ({ projet, espaces, showEmptyFields, totalDetails }) => {
                           <View style={styles.dimensionsGrid}>
                             {rideau.largeur && (
                               <View style={styles.dimensionBox}>
-                                <Text style={styles.dimensionLabel}>Largeur</Text>
+                                <Text style={styles.dimensionLabel}>
+                                  Largeur
+                                </Text>
                                 <Text style={styles.dimensionValue}>
                                   {rideau.largeur}
-                                  <Text style={styles.dimensionUnit}>m</Text>
+                                  <Text style={styles.dimensionUnit}>cm</Text>
                                 </Text>
                               </View>
                             )}
                             {rideau.hauteur && (
                               <View style={styles.dimensionBox}>
-                                <Text style={styles.dimensionLabel}>Hauteur</Text>
+                                <Text style={styles.dimensionLabel}>
+                                  Hauteur
+                                </Text>
                                 <Text style={styles.dimensionValue}>
                                   {rideau.hauteur}
-                                  <Text style={styles.dimensionUnit}>m</Text>
+                                  <Text style={styles.dimensionUnit}>cm</Text>
                                 </Text>
                               </View>
                             )}
@@ -594,7 +635,9 @@ const MesuresPDF = ({ projet, espaces, showEmptyFields, totalDetails }) => {
                       <View style={styles.detailTable}>
                         {(rideau.type_tringles || showEmptyFields) && (
                           <View style={styles.detailRow}>
-                            <Text style={styles.detailLabel}>Type de tringles</Text>
+                            <Text style={styles.detailLabel}>
+                              Type de tringles
+                            </Text>
                             <Text style={styles.detailValue}>
                               {rideau.type_tringles || "—"}
                             </Text>
@@ -602,7 +645,9 @@ const MesuresPDF = ({ projet, espaces, showEmptyFields, totalDetails }) => {
                         )}
                         {(rideau.type_rideau || showEmptyFields) && (
                           <View style={styles.detailRow}>
-                            <Text style={styles.detailLabel}>Type de rideau</Text>
+                            <Text style={styles.detailLabel}>
+                              Type de rideau
+                            </Text>
                             <Text style={styles.detailValue}>
                               {rideau.type_rideau || "—"}
                             </Text>
@@ -610,7 +655,9 @@ const MesuresPDF = ({ projet, espaces, showEmptyFields, totalDetails }) => {
                         )}
                         {(rideau.type_ouverture || showEmptyFields) && (
                           <View style={styles.detailRow}>
-                            <Text style={styles.detailLabel}>Type d'ouverture</Text>
+                            <Text style={styles.detailLabel}>
+                              Type d'ouverture
+                            </Text>
                             <Text style={styles.detailValue}>
                               {rideau.type_ouverture || "—"}
                             </Text>
@@ -618,7 +665,9 @@ const MesuresPDF = ({ projet, espaces, showEmptyFields, totalDetails }) => {
                         )}
                         {(rideau.type_confection || showEmptyFields) && (
                           <View style={styles.detailRow}>
-                            <Text style={styles.detailLabel}>Type de confection</Text>
+                            <Text style={styles.detailLabel}>
+                              Type de confection
+                            </Text>
                             <Text style={styles.detailValue}>
                               {rideau.type_confection || "—"}
                             </Text>
@@ -634,7 +683,9 @@ const MesuresPDF = ({ projet, espaces, showEmptyFields, totalDetails }) => {
                         )}
                         {(rideau.finition_au_sol || showEmptyFields) && (
                           <View style={styles.detailRow}>
-                            <Text style={styles.detailLabel}>Finition au sol</Text>
+                            <Text style={styles.detailLabel}>
+                              Finition au sol
+                            </Text>
                             <Text style={styles.detailValue}>
                               {rideau.finition_au_sol || "—"}
                             </Text>
@@ -642,7 +693,9 @@ const MesuresPDF = ({ projet, espaces, showEmptyFields, totalDetails }) => {
                         )}
                         {(rideau.ref_tissu || showEmptyFields) && (
                           <View style={styles.detailRow}>
-                            <Text style={styles.detailLabel}>Référence tissu</Text>
+                            <Text style={styles.detailLabel}>
+                              Référence tissu
+                            </Text>
                             <Text style={styles.detailValue}>
                               {rideau.ref_tissu || "—"}
                             </Text>
@@ -661,7 +714,9 @@ const MesuresPDF = ({ projet, espaces, showEmptyFields, totalDetails }) => {
                       {/* Remarque */}
                       {rideau.remarque_client && (
                         <View style={styles.remarqueRow}>
-                          <Text style={styles.remarqueLabel}>⚠ REMARQUE CLIENT</Text>
+                          <Text style={styles.remarqueLabel}>
+                            ⚠ REMARQUE CLIENT
+                          </Text>
                           <Text style={styles.remarqueValue}>
                             {rideau.remarque_client}
                           </Text>
@@ -678,19 +733,23 @@ const MesuresPDF = ({ projet, espaces, showEmptyFields, totalDetails }) => {
               espace.wallpapers.length > 0 && (
                 <View style={styles.detailsSection}>
                   <View style={styles.detailsHeader}>
-                    <Text style={styles.detailsTitle}>DÉTAILS DES PAPIERS PEINTS</Text>
-                    <Text style={styles.detailsCount}>{espace.wallpapers.length}</Text>
+                    <Text style={styles.detailsTitle}>DÉTAILS DES murs</Text>
+                    <Text style={styles.detailsCount}>
+                      {espace.wallpapers.length}
+                    </Text>
                   </View>
 
                   {espace.wallpapers.map((wallpaper, wIndex) => (
                     <View key={wIndex} style={styles.detailCard}>
                       <View style={styles.detailCardHeader}>
-                        <View style={{ flexDirection: "row", alignItems: "center" }}>
+                        <View
+                          style={{ flexDirection: "row", alignItems: "center" }}
+                        >
                           <Text style={styles.detailCardNumber}>
                             {padNumber(wIndex + 1, 2)}
                           </Text>
                           <Text style={styles.detailCardTitle}>
-                            PAPIER PEINT {wIndex + 1}
+                            Mur {wIndex + 1}
                           </Text>
                         </View>
                         <Text>✓</Text>
@@ -698,27 +757,42 @@ const MesuresPDF = ({ projet, espaces, showEmptyFields, totalDetails }) => {
 
                       {/* Dimensions */}
                       {(wallpaper.largeur || wallpaper.hauteur) && (
-                        <View style={[styles.dimensionsSection, { backgroundColor: "#e0f2fe" }]}>
+                        <View
+                          style={[
+                            styles.dimensionsSection,
+                            { backgroundColor: "#e0f2fe" },
+                          ]}
+                        >
                           <View style={styles.dimensionsGrid}>
                             {wallpaper.largeur && (
                               <View style={styles.dimensionBox}>
-                                <Text style={[styles.dimensionLabel, { color: "#0369a1" }]}>
+                                <Text
+                                  style={[
+                                    styles.dimensionLabel,
+                                    { color: "#0369a1" },
+                                  ]}
+                                >
                                   Largeur
                                 </Text>
                                 <Text style={styles.dimensionValue}>
                                   {wallpaper.largeur}
-                                  <Text style={styles.dimensionUnit}>m</Text>
+                                  <Text style={styles.dimensionUnit}>cm</Text>
                                 </Text>
                               </View>
                             )}
                             {wallpaper.hauteur && (
                               <View style={styles.dimensionBox}>
-                                <Text style={[styles.dimensionLabel, { color: "#0369a1" }]}>
+                                <Text
+                                  style={[
+                                    styles.dimensionLabel,
+                                    { color: "#0369a1" },
+                                  ]}
+                                >
                                   Hauteur
                                 </Text>
                                 <Text style={styles.dimensionValue}>
                                   {wallpaper.hauteur}
-                                  <Text style={styles.dimensionUnit}>m</Text>
+                                  <Text style={styles.dimensionUnit}>cm</Text>
                                 </Text>
                               </View>
                             )}
@@ -729,7 +803,9 @@ const MesuresPDF = ({ projet, espaces, showEmptyFields, totalDetails }) => {
                       <View style={styles.detailTable}>
                         {(wallpaper.type_prise || showEmptyFields) && (
                           <View style={styles.detailRow}>
-                            <Text style={styles.detailLabel}>Type de prise</Text>
+                            <Text style={styles.detailLabel}>
+                              Type de prise
+                            </Text>
                             <Text style={styles.detailValue}>
                               {wallpaper.type_prise || "—"}
                             </Text>
@@ -737,7 +813,9 @@ const MesuresPDF = ({ projet, espaces, showEmptyFields, totalDetails }) => {
                         )}
                         {(wallpaper.type_produit || showEmptyFields) && (
                           <View style={styles.detailRow}>
-                            <Text style={styles.detailLabel}>Type de produit</Text>
+                            <Text style={styles.detailLabel}>
+                              Type de produit
+                            </Text>
                             <Text style={styles.detailValue}>
                               {wallpaper.type_produit || "—"}
                             </Text>
@@ -764,7 +842,9 @@ const MesuresPDF = ({ projet, espaces, showEmptyFields, totalDetails }) => {
               <View style={styles.footerTop}>
                 <View>
                   <Text style={styles.footerLabel}>DOCUMENT GÉNÉRÉ PAR</Text>
-                  <Text style={styles.footerValue}>Système CRM - Mesures v2.0</Text>
+                  <Text style={styles.footerValue}>
+                    Système CRM - Mesures v2.0
+                  </Text>
                 </View>
                 <View>
                   <Text style={styles.footerLabel}>SIGNATURE</Text>
@@ -772,7 +852,8 @@ const MesuresPDF = ({ projet, espaces, showEmptyFields, totalDetails }) => {
                 </View>
               </View>
               <Text style={styles.footerCenter}>
-                {projet.projet_name} - Réf. #{padNumber(projet.id, 6)} - {formatDate()}
+                {projet.projet_name} - Réf. #{padNumber(projet.id, 6)} -{" "}
+                {formatDate()}
               </Text>
             </View>
           )}
