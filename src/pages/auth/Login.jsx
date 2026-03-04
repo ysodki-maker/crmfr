@@ -208,12 +208,11 @@ const Login = () => {
             </div>
 
             <h2 className="text-5xl font-bold leading-tight">
-              Gérez vos projets avec efficacité
+              Prenez vos mesures en toute simplicité
             </h2>
 
             <p className="text-xl text-primary-100 leading-relaxed">
-              Une solution CRM complète pour organiser vos projets, suivre vos
-              espaces et collaborer avec votre équipe.
+              Bienvenue sur notre outil  de prise de mesure pour rideaux
             </p>
 
             <div className="space-y-4 pt-8">
@@ -266,3 +265,4 @@ const Login = () => {
 };
 
 export default Login;
+
