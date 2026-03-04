@@ -187,11 +187,10 @@ const Dashboard = () => {
             <div className="bg-gradient-to-br from-primary-600 to-primary-800 rounded-xl sm:rounded-2xl p-6 sm:p-8 text-white shadow-xl">
               <div className="max-w-2xl">
                 <h2 className="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4">
-                  Bienvenue dans votre CRM 🎉
+                  Module de prise de mesure – Configuration du projet 🎉
                 </h2>
                 <p className="text-primary-100 text-sm sm:text-base lg:text-lg leading-relaxed mb-4 sm:mb-6">
-                  Gérez efficacement tous vos projets en un seul endroit. Suivez l'avancement, 
-                  organisez vos espaces et collaborez avec votre équipe.
+                  Vous êtes maintenant connecté à l’outil de calcul et de validation des dimensions.
                 </p>
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
                   <button
@@ -215,5 +214,6 @@ const Dashboard = () => {
     </div>
   );
 };
+
 
 export default Dashboard;
