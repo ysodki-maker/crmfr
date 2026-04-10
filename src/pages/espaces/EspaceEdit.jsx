@@ -694,14 +694,28 @@ const EspaceEdit = () => {
                               className="input"
                             >
                               <option value="">Sélectionner...</option>
-                              <option value="à fleur (0,5 cm)">
-                                à fleur (0,5 cm)
-                              </option>
-                              <option value="cassant 1 cm">cassant 1 cm</option>
-                              <option value="cassant 2 cm">cassant 2 cm</option>
-                              <option value="cassant 3 cm">cassant 3 cm</option>
-                              <option value="cassant 4 cm">cassant 4 cm</option>
-                              <option value="cassant 5 cm">cassant 5 cm</option>
+                              {/* Valeur spéciale */}
+                              <option value="à fleur (0,5 cm)">à fleur (0,5 cm)</option>
+                            
+                              {/* Négatif (-1 à -20) */}
+                              {Array.from({ length: 20 }, (_, i) => {
+                                const value = -(i + 1);
+                                return (
+                                  <option key={value} value={`cassant ${value} cm`}>
+                                    cassant {value} cm
+                                  </option>
+                                );
+                              })}
+                            
+                              {/* Positif (1 à 20) */}
+                              {Array.from({ length: 20 }, (_, i) => {
+                                const value = i + 1;
+                                return (
+                                  <option key={value} value={`cassant ${value} cm`}>
+                                    cassant {value} cm
+                                  </option>
+                                );
+                              })}
                             </select>
                           </div>
 
