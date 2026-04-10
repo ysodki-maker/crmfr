@@ -730,8 +730,20 @@ const EspaceEdit = () => {
                               className="input"
                             >
                               <option value="">Sélectionner...</option>
+                              <option value="1 cm">1 cm</option>
+                              <option value="2 cm">2 cm</option>
+                              <option value="3 cm">3 cm</option>
+                              <option value="4 cm">4 cm</option>
                               <option value="5 cm">5 cm</option>
+                              <option value="6 cm">6 cm</option>
+                              <option value="7 cm">7 cm</option>
+                              <option value="8 cm">8 cm</option>
+                              <option value="9 cm">9 cm</option>
                               <option value="10 cm">10 cm</option>
+                              <option value="11 cm">11 cm</option>
+                              <option value="12 cm">12 cm</option>
+                              <option value="13 cm">13 cm</option>
+                              <option value="14 cm">14 cm</option>
                               <option value="15 cm">15 cm</option>
                               <option value="Bas plombé">Bas plombé</option>
                             </select>
